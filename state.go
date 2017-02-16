@@ -1,7 +1,7 @@
 package dinghy
 
 import (
-	"fmt"
+	"encoding/json"
 	"sync"
 	"time"
 )
@@ -27,6 +27,15 @@ var (
 	// DefaultHeartbeatTickRange will set the range of numbers for the heartbeat timeout.
 	DefaultHeartbeatTickRange = 2000
 )
+
+// Status is used to show the current states status.
+type Status struct {
+	ID       int    `json:"id"`
+	LeaderID int    `json:"leader_id"`
+	State    string `json:"state"`
+	Term     int    `json:"term"`
+	VotedFor int    `json:"voted_for"`
+}
 
 // State encapsulates the current nodes raft state.
 type State struct {
@@ -78,18 +87,20 @@ func NewState(id int, electionTimeoutMS, heartbeatTimeoutMS int) *State {
 func (s *State) String() string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return fmt.Sprintf(
-		"id: %d leader_id: %d state: %s term: %d voted_for: %d",
-		s.id,
-		s.leaderID,
-		s.StateString(s.state),
-		s.term,
-		s.votedFor,
-	)
+	d, _ := json.Marshal(Status{
+		ID:       s.id,
+		LeaderID: s.leaderID,
+		State:    s.StateString(s.state),
+		Term:     s.term,
+		VotedFor: s.votedFor,
+	})
+	return string(d)
 }
 
 // ID returns the nodes id.
 func (s *State) ID() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	return s.id
 }
 

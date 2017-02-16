@@ -8,12 +8,16 @@ import (
 )
 
 const (
+	// RouteAppendEntries for append entries requests.
+	RouteAppendEntries = "/appendentries"
 	// RouteID for id requests.
 	RouteID = "/id"
 	// RouteRequestVote for request vote requests.
 	RouteRequestVote = "/requestvote"
-	// RouteAppendEntries for append entries requests.
-	RouteAppendEntries = "/appendentries"
+	// RouteStatus will render the current nodes full state.
+	RouteStatus = "/status"
+	// RouteStepDown to force a node to step down.
+	RouteStepDown = "/stepdown"
 )
 
 var (
@@ -38,8 +42,33 @@ func (d *Dinghy) Routes() []*Route {
 		&Route{d.routePrefix + RouteID, d.IDHandler()},
 		&Route{d.routePrefix + RouteRequestVote, d.RequestVoteHandler()},
 		&Route{d.routePrefix + RouteAppendEntries, d.AppendEntriesHandler()},
+		&Route{d.routePrefix + RouteStatus, d.StatusHandler()},
+		&Route{d.routePrefix + RouteStepDown, d.StepDownHandler()},
 	}
 	return routes
+}
+
+// StepDownHandler (POST) will force the node to step down to a follower state.
+func (d *Dinghy) StepDownHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "PUT" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+		d.State.State(StateFollower)
+		fmt.Fprintln(w, d.State)
+	}
+}
+
+// StatusHandler (GET) returns the nodes full state.
+func (d *Dinghy) StatusHandler() func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+			return
+		}
+		fmt.Fprintln(w, d.State)
+	}
 }
 
 // IDHandler (GET) returns the nodes id.

@@ -13,9 +13,60 @@ import (
 func TestDinghy_Handlers(t *testing.T) {
 	din := newDinghy(t)
 	r := din.Routes()
-	if len(r) != 3 {
-		t.Errorf("want 3 routes got %d", len(r))
+	equals(t, 5, len(r))
+}
+
+func TestDinghy_StatusHandler(t *testing.T) {
+	din := newDinghy(t)
+	handler := din.StatusHandler()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("POST", din.routePrefix+RouteStatus, nil)
+	handler(w, req)
+	equals(t, http.StatusMethodNotAllowed, w.Code)
+
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("GET", din.routePrefix+RouteStatus, nil)
+	handler(w, req)
+
+	equals(t, http.StatusOK, w.Code)
+	want := Status{
+		ID:       1613,
+		LeaderID: 0,
+		State:    "follower",
+		Term:     1,
+		VotedFor: 0,
 	}
+	var got Status
+	json.Unmarshal(w.Body.Bytes(), &got)
+	equals(t, want, got)
+}
+
+func TestDinghy_StepDownHandler(t *testing.T) {
+	din := newDinghy(t)
+	din.State.State(StateLeader)
+	handler := din.StepDownHandler()
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", din.routePrefix+RouteStepDown, nil)
+	handler(w, req)
+	equals(t, http.StatusMethodNotAllowed, w.Code)
+
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest("PUT", din.routePrefix+RouteStepDown, nil)
+	handler(w, req)
+
+	equals(t, http.StatusOK, w.Code)
+	want := Status{
+		ID:       1613,
+		LeaderID: 0,
+		State:    "follower",
+		Term:     1,
+		VotedFor: 0,
+	}
+	var got Status
+	json.Unmarshal(w.Body.Bytes(), &got)
+	equals(t, want, got)
 }
 
 func TestDinghy_IDHandler(t *testing.T) {
