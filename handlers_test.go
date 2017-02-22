@@ -319,7 +319,7 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			method: "POST",
 			req: &AppendEntriesRequest{
 				Term:     din.State.Term() + 1,
-				LeaderID: din.State.ID(),
+				LeaderID: 999,
 			},
 			wantResp: &appendEntriesResponse{
 				Term:    2,
@@ -333,14 +333,14 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			startVotedFor: NoVote,
 			endVotedFor:   NoVote,
 			startLeaderID: UnknownLeaderID,
-			endLeaderID:   UnknownLeaderID,
+			endLeaderID:   999,
 		},
 		{
 			name:   "03 request from a equal term so step down",
 			method: "POST",
 			req: &AppendEntriesRequest{
 				Term:     2,
-				LeaderID: 1,
+				LeaderID: 999,
 			},
 			wantResp: &appendEntriesResponse{
 				Term:    2,
@@ -354,7 +354,7 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			startVotedFor: NoVote,
 			endVotedFor:   NoVote,
 			startLeaderID: UnknownLeaderID,
-			endLeaderID:   UnknownLeaderID,
+			endLeaderID:   999,
 		},
 	}
 	for _, tt := range tests {

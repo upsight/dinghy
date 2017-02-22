@@ -171,8 +171,14 @@ func (d *Dinghy) AppendEntriesHandler() func(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		// The request is from an old term so reject
-		if ae.Term < d.State.Term() {
+		// There are a few cases here:
+		// 1. The request is from an old term so reject
+		// 2. The request is from a newer term so step down
+		// 3. If we are a follower and get an append entries continue on with success
+		// 4. If we are not a follower and get an append entries, it means there is
+		//    another leader already and we should step down.
+		switch {
+		case ae.Term < d.State.Term():
 			d.logger.Printf("got AppendEntries request from older term, rejecting %+v %s", ae, d.State)
 			aeResp := appendEntriesResponse{
 				Term:    d.State.Term(),
@@ -183,15 +189,19 @@ func (d *Dinghy) AppendEntriesHandler() func(w http.ResponseWriter, r *http.Requ
 				http.Error(w, emptyRequestVoteResponse.String(), http.StatusInternalServerError)
 			}
 			return
-		}
-
-		// Step down and reset state on newer or equal term.
-		if ae.Term >= d.State.Term() {
+		case ae.Term > d.State.Term():
 			d.logger.Printf("got AppendEntries request from newer term, stepping down %+v %s", ae, d.State)
 			d.State.StepDown(ae.Term)
+		case ae.Term == d.State.Term():
+			// ignore request to self and only step down if not in follower state.
+			if ae.LeaderID != d.State.ID() && d.State.State() != StateFollower {
+				d.logger.Printf("got AppendEntries request from another leader with the same term, stepping down %+v %s", ae, d.State)
+				d.State.StepDown(ae.Term)
+			}
 		}
 
 		// ok
+		d.State.LeaderID(ae.LeaderID)
 		d.State.AppendEntriesEvent(&ae)
 		aeResp := appendEntriesResponse{
 			Term:    d.State.Term(),
