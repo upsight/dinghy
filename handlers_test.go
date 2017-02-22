@@ -266,7 +266,7 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 		name          string
 		method        string
 		req           *AppendEntriesRequest
-		resp          *appendEntriesResponse
+		wantResp      *appendEntriesResponse
 		statusCode    int
 		startState    int
 		endState      int
@@ -281,7 +281,7 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			name:          "00 method not allowed",
 			method:        "GET",
 			req:           nil,
-			resp:          nil,
+			wantResp:      nil,
 			statusCode:    http.StatusMethodNotAllowed,
 			startState:    StateFollower,
 			endState:      StateFollower,
@@ -293,13 +293,13 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			endLeaderID:   UnknownLeaderID,
 		},
 		{
-			name:   "02 request from an old term so rejected",
+			name:   "01 request from an old term so rejected",
 			method: "POST",
 			req: &AppendEntriesRequest{
 				Term:     din.State.Term() - 1,
 				LeaderID: din.State.ID(),
 			},
-			resp: &appendEntriesResponse{
+			wantResp: &appendEntriesResponse{
 				Term:    din.State.Term(),
 				Success: false,
 				Reason:  "term 0 < 1",
@@ -321,7 +321,7 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 				Term:     din.State.Term() + 1,
 				LeaderID: din.State.ID(),
 			},
-			resp: &appendEntriesResponse{
+			wantResp: &appendEntriesResponse{
 				Term:    2,
 				Success: true,
 			},
@@ -329,6 +329,27 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			startState:    StateCandidate,
 			endState:      StateFollower,
 			startTerm:     1,
+			endTerm:       2,
+			startVotedFor: NoVote,
+			endVotedFor:   NoVote,
+			startLeaderID: UnknownLeaderID,
+			endLeaderID:   UnknownLeaderID,
+		},
+		{
+			name:   "03 request from a equal term so step down",
+			method: "POST",
+			req: &AppendEntriesRequest{
+				Term:     2,
+				LeaderID: 1,
+			},
+			wantResp: &appendEntriesResponse{
+				Term:    2,
+				Success: true,
+			},
+			statusCode:    http.StatusOK,
+			startState:    StateLeader,
+			endState:      StateFollower,
+			startTerm:     2,
 			endTerm:       2,
 			startVotedFor: NoVote,
 			endVotedFor:   NoVote,
@@ -354,8 +375,8 @@ func TestDinghy_AppendEntriesHandler(t *testing.T) {
 			}
 			aeHandler(w, req)
 			equals(t, tt.statusCode, w.Code)
-			if tt.resp != nil {
-				want, _ := json.Marshal(tt.resp)
+			if tt.wantResp != nil {
+				want, _ := json.Marshal(tt.wantResp)
 				equals(t, string(want)+"\n", w.Body.String())
 			}
 			equals(t, din.State.StateString(tt.endState), din.State.StateString(din.State.State()))

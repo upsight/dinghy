@@ -185,8 +185,8 @@ func (d *Dinghy) AppendEntriesHandler() func(w http.ResponseWriter, r *http.Requ
 			return
 		}
 
-		// Step down and reset state on newer term.
-		if ae.Term > d.State.Term() {
+		// Step down and reset state on newer or equal term.
+		if ae.Term >= d.State.Term() {
 			d.logger.Printf("got AppendEntries request from newer term, stepping down %+v %s", ae, d.State)
 			d.State.StepDown(ae.Term)
 		}
