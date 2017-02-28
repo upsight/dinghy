@@ -63,7 +63,11 @@ func New(addr string, nodes []string, onLeader, onFollower ApplyFunc, l Logger, 
 	}
 	c := &http.Client{}
 
-	id := hashToInt(addr, len(nodes)*1000) + 1
+	id, err := hashToInt(addr, len(nodes)*1000)
+	if err != nil {
+		return nil, err
+	}
+	id++
 	d := &Dinghy{
 		client:      c,
 		logger:      l,

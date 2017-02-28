@@ -24,7 +24,11 @@ func Test_hashToUint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			equals(t, hashToInt(tt.args.s, tt.args.max), tt.want)
+			id, err := hashToInt(tt.args.s, tt.args.max)
+			if err != nil {
+				t.Fatal(err)
+			}
+			equals(t, id, tt.want)
 		})
 	}
 }
@@ -36,7 +40,7 @@ func Test_randomTimeout(t *testing.T) {
 
 	select {
 	case <-timeout:
-		diff := time.Now().Sub(start)
+		diff := time.Since(start)
 		if diff < time.Millisecond {
 			t.Fatalf("fired early")
 		}

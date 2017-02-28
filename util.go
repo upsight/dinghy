@@ -12,10 +12,12 @@ func init() {
 
 // hashToInt will hash the input string and return
 // it's int equivalent up to the max int given.
-func hashToInt(s string, max int) int {
+func hashToInt(s string, max int) (int, error) {
 	h := fnv.New32a()
-	h.Write([]byte(s))
-	return int(h.Sum32() % uint32(max))
+	if _, err := h.Write([]byte(s)); err != nil {
+		return 0, err
+	}
+	return int(h.Sum32() % uint32(max)), nil
 }
 
 // randomTimeout returns a value that is between the min and 2x min.

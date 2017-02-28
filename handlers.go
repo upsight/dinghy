@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 )
 
@@ -26,8 +27,12 @@ var (
 )
 
 func init() {
-	json.NewEncoder(&emptyAppendEntriesResponse).Encode(appendEntriesResponse{})
-	json.NewEncoder(&emptyRequestVoteResponse).Encode(requestVoteResponse{})
+	if err := json.NewEncoder(&emptyAppendEntriesResponse).Encode(appendEntriesResponse{}); err != nil {
+		log.Fatalln("error encoding json:", err)
+	}
+	if err := json.NewEncoder(&emptyRequestVoteResponse).Encode(requestVoteResponse{}); err != nil {
+		log.Fatalln("error encoding json:", err)
+	}
 }
 
 // Route holds path and handler information.
