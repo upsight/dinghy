@@ -2,10 +2,12 @@ package dinghy
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 // AppendEntriesRequest represents AppendEntries requests. Replication logging is ignored.
@@ -58,7 +60,7 @@ func (d *Dinghy) RequestVoteRequest() (int, error) {
 		d.logger.Errorln("could not create payload", method, route, string(body))
 		return d.State.Term(), err
 	}
-	responses := d.BroadcastRequest(d.Nodes, method, route, body)
+	responses := d.BroadcastRequest(d.Nodes, method, route, body, 0)
 	votes := 0
 LOOP:
 	for i, resp := range responses {
@@ -108,7 +110,7 @@ func (d *Dinghy) AppendEntriesRequest() (int, error) {
 		d.logger.Errorln("could not create payload", method, route, string(body))
 		return d.State.Term(), err
 	}
-	responses := d.BroadcastRequest(d.Nodes, method, route, body)
+	responses := d.BroadcastRequest(d.Nodes, method, route, body, d.State.heartbeatTimeoutMS/2)
 	for i, resp := range responses {
 		if resp == nil {
 			// peer failed
@@ -130,7 +132,7 @@ func (d *Dinghy) AppendEntriesRequest() (int, error) {
 }
 
 // BroadcastRequest will send a request to all other nodes in the system.
-func (d *Dinghy) BroadcastRequest(peers []string, method, route string, body []byte) []*http.Response {
+func (d *Dinghy) BroadcastRequest(peers []string, method, route string, body []byte, timeoutMS int) []*http.Response {
 	responses := make([]*http.Response, len(peers))
 	wg := &sync.WaitGroup{}
 	for ind, peer := range peers {
@@ -142,12 +144,17 @@ func (d *Dinghy) BroadcastRequest(peers []string, method, route string, body []b
 			if !strings.HasPrefix(url, "http") {
 				url = "http://" + url + route
 			}
-			r, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+			req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
 			if err != nil {
 				d.logger.Errorln("could not create request", method, url, string(body))
 				return
 			}
-			resp, err := d.client.Do(r)
+			if timeoutMS > 0 {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutMS)*time.Millisecond)
+				defer cancel()
+				req = req.WithContext(ctx)
+			}
+			resp, err := d.client.Do(req)
 			if err != nil {
 				d.logger.Errorln("failed request", err, method, url, string(body))
 				return
