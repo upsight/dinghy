@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sync"
+	"time"
 )
 
 var (
@@ -61,7 +62,9 @@ func New(addr string, nodes []string, onLeader, onFollower ApplyFunc, l Logger, 
 	if onFollower == nil {
 		onFollower = DefaultOnFollower
 	}
-	c := &http.Client{}
+	c := &http.Client{
+		Timeout: time.Duration(hMS) * time.Millisecond,
+	}
 
 	id, err := hashToInt(addr, len(nodes)*1000)
 	if err != nil {
