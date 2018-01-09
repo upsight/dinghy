@@ -31,25 +31,25 @@ func (d *DiscardLogger) Errorf(format string, v ...interface{}) {}
 
 // LogLogger uses the std lib logger.
 type LogLogger struct {
-	logger *log.Logger
+	Logger *log.Logger
 }
 
 // Println std lib
 func (d *LogLogger) Println(v ...interface{}) {
-	d.logger.Output(3, "[INFO] "+fmt.Sprintln(v...))
+	d.Logger.Output(3, "[INFO] "+fmt.Sprintln(v...))
 }
 
 // Printf std lib
 func (d *LogLogger) Printf(format string, v ...interface{}) {
-	d.logger.Output(3, fmt.Sprintf("[INFO] "+format, v...))
+	d.Logger.Output(3, fmt.Sprintf("[INFO] "+format, v...))
 }
 
 // Errorln std lib
 func (d *LogLogger) Errorln(v ...interface{}) {
-	d.logger.Output(3, "[ERRO] "+fmt.Sprintln(v...))
+	d.Logger.Output(3, "[ERRO] "+fmt.Sprintln(v...))
 }
 
 // Errorf std lib
 func (d *LogLogger) Errorf(format string, v ...interface{}) {
-	d.logger.Output(3, fmt.Sprintf("[ERRO] "+format, v...))
+	d.Logger.Output(3, fmt.Sprintf("[ERRO] "+format, v...))
 }
