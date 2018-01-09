@@ -71,10 +71,12 @@ func New(addr string, nodes []string, onLeader, onFollower ApplyFunc, l Logger, 
 		return nil, err
 	}
 	id++
+	mu := &sync.Mutex{}
+	mu.Lock()
 	d := &Dinghy{
 		client:      c,
 		logger:      l,
-		mu:          &sync.Mutex{},
+		mu:          mu,
 		routePrefix: DefaultRoutePrefix,
 		stopChan:    make(chan struct{}),
 		Addr:        addr,
@@ -83,6 +85,7 @@ func New(addr string, nodes []string, onLeader, onFollower ApplyFunc, l Logger, 
 		OnFollower:  onFollower,
 		State:       NewState(id, eMS, hMS),
 	}
+	mu.Unlock()
 	l.Printf("%+v", d)
 	return d, nil
 }
@@ -129,10 +132,13 @@ func (d *Dinghy) Start() error {
 // the process of leader election with a RequestVote.
 func (d *Dinghy) follower() error {
 	d.logger.Println("entering follower state, leader id", d.State.LeaderID())
+	d.mu.Lock()
 	if err := d.OnFollower(); err != nil {
 		d.logger.Errorln("executing OnFollower", err)
+		d.mu.Unlock()
 		return err
 	}
+	d.mu.Unlock()
 LOOP:
 	for {
 		select {
@@ -235,6 +241,8 @@ func (d *Dinghy) leader() error {
 		// Run the OnLeader event in a goroutine in case
 		// it has a long delay. Any errors returned will exit the
 		// leader state.
+		d.mu.Lock()
+		defer d.mu.Unlock()
 		if err := d.OnLeader(); err != nil {
 			d.logger.Errorln("executing OnLeader", err)
 			errChan <- err
@@ -243,6 +251,12 @@ func (d *Dinghy) leader() error {
 	for {
 		select {
 		case err := <-errChan:
+			d.State.State(StateFollower)
+			go func() {
+				// Removing the state change event here
+				// before returning error.
+				<-d.State.StateChanged()
+			}()
 			return err
 		case <-d.stopChan:
 			return nil

@@ -113,6 +113,8 @@ func TestNew(t *testing.T) {
 			}
 			equals(t, got.Addr, tt.want.Addr)
 			equals(t, got.Nodes, tt.want.Nodes)
+			got.mu.Lock()
+			defer got.mu.Unlock()
 			err = got.OnLeader()
 			if (err != nil) != tt.wantLeaderErr {
 				t.Errorf("OnLeader() error = %v, wantErr %v", err, tt.wantLeaderErr)
@@ -175,7 +177,9 @@ func TestDinghy_follower(t *testing.T) {
 	din.Stop()
 
 	wantErr := fmt.Errorf("test")
+	din.mu.Lock()
 	din.OnFollower = func() error { return wantErr }
+	din.mu.Unlock()
 	err := din.Start()
 	equals(t, wantErr, err)
 }
@@ -226,7 +230,11 @@ func TestDinghy_leader(t *testing.T) {
 	din.Stop()
 
 	wantErr := fmt.Errorf("test")
+	din.mu.Lock()
 	din.OnLeader = func() error { return wantErr }
+	din.mu.Unlock()
 	err := din.leader()
 	equals(t, wantErr, err)
+	time.Sleep(time.Millisecond * 10)
+	equals(t, StateFollower, din.State.State())
 }

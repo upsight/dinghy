@@ -89,28 +89,29 @@ func TestDinghy_RequestVoteRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			nodeResponse := tt.nodeResponse
 			din.State.Term(tt.startTerm)
 			din.State.State(tt.startState)
 			if tt.useNodes {
 				node0 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node3 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node4 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				din.Nodes = []string{node0.URL, node1.URL, node2.URL, node3.URL, node4.URL}
 			} else {
 				node0 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				din.Nodes = []string{node0.URL}
 			}
@@ -164,23 +165,24 @@ func TestDinghy_AppendEntriesRequest(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			nodeResponse := tt.nodeResponse
 			din.State.Term(tt.startTerm)
 			din.State.State(tt.startState)
 			if tt.useNodes {
 				node0 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node1 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node2 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node3 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				node4 := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					json.NewEncoder(w).Encode(tt.nodeResponse)
+					json.NewEncoder(w).Encode(nodeResponse)
 				}))
 				din.Nodes = []string{node0.URL, node1.URL, node2.URL, node3.URL, node4.URL}
 			}
