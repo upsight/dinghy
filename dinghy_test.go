@@ -173,6 +173,11 @@ func TestDinghy_follower(t *testing.T) {
 	go din.leader()
 	time.Sleep(time.Millisecond * 10)
 	din.Stop()
+
+	wantErr := fmt.Errorf("test")
+	din.OnFollower = func() error { return wantErr }
+	err := din.Start()
+	equals(t, wantErr, err)
 }
 
 func TestDinghy_candidate(t *testing.T) {
@@ -219,4 +224,9 @@ func TestDinghy_leader(t *testing.T) {
 	go din.leader()
 	time.Sleep(time.Millisecond * 10)
 	din.Stop()
+
+	wantErr := fmt.Errorf("test")
+	din.OnLeader = func() error { return wantErr }
+	err := din.leader()
+	equals(t, wantErr, err)
 }
